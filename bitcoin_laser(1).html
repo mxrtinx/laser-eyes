@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Laser Eyes - Manual Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --btc: #f2a900; --bg: #0a0a0a; --gray: #1a1a1a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        .card { width: 100%; max-width: 500px; background: var(--gray); padding: 25px; border-radius: 20px; border: 1px solid #333; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--btc); margin-bottom: 10px; font-size: 1.8rem; }
+        
+        .canvas-container { position: relative; margin: 15px 0; border-radius: 12px; overflow: hidden; border: 1px solid #333; background: #000; cursor: crosshair; }
+        canvas { width: 100%; display: block; }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; text-align: left; }
+        .control-group { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        label { display: block; font-size: 11px; color: var(--btc); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+        
+        select, input[type="range"] { width: 100%; background: #333; color: white; border: none; padding: 5px; border-radius: 4px; }
+
+        .btn { background: var(--btc); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; margin: 5px 0; transition: 0.2s; }
+        .btn:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .btn-alt { background: #333; color: #eee; font-size: 0.9rem; }
+        .btn-download { background: #28a745; color: white; }
+
+        #step-2, #step-3 { display: none; }
+        #qr-wrap { background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 15px 0; }
+        .info { font-size: 13px; color: #888; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>₿ LASER EYES</h1>
+        <p class="info" id="top-info">Crea tu foto de perfil Bitcoin</p>
+
+        <div id="step-1">
+            <input type="file" id="up" accept="image/*" style="display:none">
+            <button class="btn" onclick="document.getElementById('up').click()">📸 SELECCIONAR FOTO</button>
+        </div>
+
+        <div id="step-2">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Estilo de Láser</label>
+                    <select id="laser-style">
+                        <option value="classic">Clásico (Brillante)</option>
+                        <option value="glow">Glow (Fino)</option>
+                        <option value="pulse">Explosión</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Tamaño</label>
+                    <input type="range" id="laser-size" min="10" max="80" value="35">
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="cvs"></canvas>
+            </div>
+            
+            <p style="font-size:12px; color: #f2a900; margin-bottom: 10px;">👇 Toca la foto donde quieras los láseres</p>
+            
+            <button class="btn" onclick="irAFinalizar()">SIGUIENTE: DESCARGAR</button>
+            <button class="btn btn-alt" onclick="resetLasers()">Limpiar Lienzo</button>
+        </div>
+
+        <div id="step-3">
+            <button class="btn btn-download" onclick="descargar()">⬇️ DESCARGAR AHORA</button>
+            
+            <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
+                <p style="font-size: 14px; font-weight: bold;">¿Te gustó el resultado?</p>
+                <div id="qr-wrap"></div>
+                <p class="info">Puedes dejar un <span style="color:var(--btc)">aporte voluntario</span> para apoyar el código abierto.</p>
+                <p style="font-family: monospace; font-size: 11px; color: #555;">kakhan@coinos.io</p>
+            </div>
+            
+            <button class="btn btn-alt" style="margin-top: 20px;" onclick="location.reload()">Hacer otra foto</button>
+        </div>
+    </div>
+
+<script>
+    const LN_ADDR = 'kakhan@coinos.io'; 
+    const cvs = document.getElementById('cvs');
+    const ctx = cvs.getContext('2d');
+    let imgBase = null, lasers = [];
+
+    // 1. Cargar Imagen
+    document.getElementById('up').onchange = e => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            imgBase = new Image();
+            imgBase.onload = () => {
+                // Ajuste de resolución para que no pese demasiado
+                const scale = Math.min(1, 1200 / imgBase.width);
+                cvs.width = imgBase.width * scale;
+                cvs.height = imgBase.height * scale;
+                dibujar();
+                document.getElementById('step-1').style.display = 'none';
+                document.getElementById('step-2').style.display = 'block';
+            };
+            imgBase.src = ev.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    // 2. Click para poner láser
+    cvs.onclick = e => {
+        const rect = cvs.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (cvs.width / rect.width);
+        const y = (e.clientY - rect.top) * (cvs.height / rect.height);
+        
+        lasers.push({
+            x: x,
+            y: y,
+            size: parseInt(document.getElementById('laser-size').value),
+            style: document.getElementById('laser-style').value
+        });
+        dibujar();
+    };
+
+    function resetLasers() { lasers = []; dibujar(); }
+
+    function dibujar() {
+        ctx.drawImage(imgBase, 0, 0, cvs.width, cvs.height);
+        lasers.forEach(l => {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            let g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.size * 2.5);
+            
+            if (l.style === 'classic') {
+                g.addColorStop(0, '#fff');
+                g.addColorStop(0.2, '#f2a900');
+                g.addColorStop(0.6, '#ff0000');
+                g.addColorStop(1, 'transparent');
+            } else if (l.style === 'glow') {
+                g.addColorStop(0, '#fff');
+                g.addColorStop(0.1, '#f2a900');
+                g.addColorStop(1, 'transparent');
+            } else { // Pulse/Explosión
+                g.addColorStop(0, '#fff');
+                g.addColorStop(0.1, '#fff');
+                g.addColorStop(0.4, '#f2a900');
+                g.addColorStop(1, 'transparent');
+                // Añadir destellos extra
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#f2a900';
+            }
+            
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(l.x, l.y, l.size * 2.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    // 3. Finalizar y QR
+    function irAFinalizar() {
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('step-3').style.display = 'block';
+        document.getElementById('top-info').innerText = "¡Imagen lista para descargar!";
+
+        new QRCode(document.getElementById('qr-wrap'), {
+            text: `lightning:${LN_ADDR}`,
+            width: 180,
+            height: 180
+        });
+    }
+
+    function descargar() {
+        const a = document.createElement('a');
+        a.download = 'bitcoin-laser-eyes.png';
+        a.href = cvs.toDataURL('image/png');
+        a.click();
+    }
+</script>
+</body>
+</html>
