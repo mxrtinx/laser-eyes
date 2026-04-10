@@ -3,173 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Laser Eyes - Manual Pro</title>
+    <title>Bitcoin Laser Eyes | Custom Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --btc: #f2a900; --bg: #0a0a0a; --gray: #1a1a1a; }
+        /* Variables de color Bitcoin */
+        :root {
+            --btc-orange: #f2a900;
+            --btc-glow: rgba(242, 169, 0, 0.5);
+            --bg-dark: #0a0a0c;
+            --card-bg: #16161a;
+            --text-main: #e0e0e0;
+            --text-dim: #94a3b8;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-        .card { width: 100%; max-width: 500px; background: var(--gray); padding: 25px; border-radius: 20px; border: 1px solid #333; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { color: var(--btc); margin-bottom: 10px; font-size: 1.8rem; }
-        
-        .canvas-container { position: relative; margin: 15px 0; border-radius: 12px; overflow: hidden; border: 1px solid #333; background: #000; cursor: crosshair; }
-        canvas { width: 100%; display: block; }
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: var(--bg-dark); 
+            background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, var(--bg-dark) 100%);
+            color: var(--text-main); 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; padding: 40px 20px; 
+        }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; text-align: left; }
-        .control-group { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-        label { display: block; font-size: 11px; color: var(--btc); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
-        
-        select, input[type="range"] { width: 100%; background: #333; color: white; border: none; padding: 5px; border-radius: 4px; }
+        /* Título con resplandor */
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { 
+            font-size: 2.5rem; 
+            color: var(--btc-orange); 
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px var(--btc-glow);
+            margin-bottom: 10px;
+        }
+        .tagline { color: var(--text-dim); font-size: 1rem; }
 
-        .btn { background: var(--btc); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; margin: 5px 0; transition: 0.2s; }
-        .btn:hover { transform: scale(1.02); filter: brightness(1.1); }
-        .btn-alt { background: #333; color: #eee; font-size: 0.9rem; }
-        .btn-download { background: #28a745; color: white; }
+        /* Contenedor principal */
+        .card { 
+            width: 100%; 
+            max-width: 550px; 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 24px; 
+            border: 1px solid #2d2d35;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        /* El área de la foto */
+        .canvas-container { 
+            position: relative; 
+            margin: 20px 0; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            border: 2px dashed #3f3f46;
+            background: #000;
+            transition: border 0.3s ease;
+        }
+        .canvas-container:hover { border-color: var(--btc-orange); }
+        canvas { width: 100%; display: block; cursor: crosshair; }
+
+        /* Botones modernos */
+        .btn { 
+            background: var(--btc-orange); 
+            color: #000; 
+            border: none; 
+            padding: 16px 24px; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            width: 100%; 
+            cursor: pointer; 
+            font-size: 1rem; 
+            margin: 8px 0; 
+            transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px var(--btc-glow); }
+        .btn-alt { background: #27272a; color: var(--text-main); border: 1px solid #3f3f46; }
+        .btn-alt:hover { background: #3f3f46; border-color: #52525b; }
+        .btn-success { background: #10b981; color: white; }
+
+        /* Paso de pago */
+        #qr-wrap { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 16px; 
+            display: inline-block; 
+            margin: 20px 0;
+            box-shadow: 0 0 30px rgba(255,255,255,0.1);
+        }
+        .address-tag {
+            background: #000;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--btc-orange);
+            margin-top: 10px;
+        }
+
+        /* Animación de entrada */
+        #step-2, #step-3 { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         #step-2, #step-3 { display: none; }
-        #qr-wrap { background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 15px 0; }
-        .info { font-size: 13px; color: #888; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <header>
         <h1>₿ LASER EYES</h1>
-        <p class="info" id="top-info">Crea tu foto de perfil Bitcoin</p>
+        <p class="tagline">Personaliza tu foto de perfil para la ciudadela</p>
+    </header>
 
+    <div class="card">
         <div id="step-1">
             <input type="file" id="up" accept="image/*" style="display:none">
-            <button class="btn" onclick="document.getElementById('up').click()">📸 SELECCIONAR FOTO</button>
+            <button class="btn" onclick="document.getElementById('up').click()">
+                <span>📷</span> SELECCIONAR FOTO
+            </button>
+            <p class="info" style="margin-top:15px; font-size: 0.8rem; color: var(--text-dim);">Formatos soportados: JPG, PNG, WEBP</p>
         </div>
 
         <div id="step-2">
-            <div class="controls">
-                <div class="control-group">
-                    <label>Estilo de Láser</label>
-                    <select id="laser-style">
-                        <option value="classic">Clásico (Brillante)</option>
-                        <option value="glow">Glow (Fino)</option>
-                        <option value="pulse">Explosión</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>Tamaño</label>
-                    <input type="range" id="laser-size" min="10" max="80" value="35">
-                </div>
-            </div>
-
             <div class="canvas-container">
                 <canvas id="cvs"></canvas>
             </div>
-            
-            <p style="font-size:12px; color: #f2a900; margin-bottom: 10px;">👇 Toca la foto donde quieras los láseres</p>
-            
-            <button class="btn" onclick="irAFinalizar()">SIGUIENTE: DESCARGAR</button>
-            <button class="btn btn-alt" onclick="resetLasers()">Limpiar Lienzo</button>
+            <p style="font-size:0.9rem; color:var(--btc-orange); margin-bottom: 15px;">✨ Toca sobre los ojos para activar los láseres</p>
+            <button class="btn" onclick="irAFinalizar()">GENERAR DESCARGA</button>
+            <button class="btn btn-alt" onclick="reset()">LIMPIAR LIENZO</button>
         </div>
 
         <div id="step-3">
-            <button class="btn btn-download" onclick="descargar()">⬇️ DESCARGAR AHORA</button>
+            <button class="btn btn-success" onclick="descargar()">⬇️ DESCARGAR IMAGEN</button>
             
-            <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-                <p style="font-size: 14px; font-weight: bold;">¿Te gustó el resultado?</p>
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #2d2d35;">
+                <p style="font-weight: 600; margin-bottom: 5px;">¿Te gusta el generador?</p>
+                <p class="info" style="font-size: 0.85rem; margin-bottom: 15px;">Apoya el desarrollo con un aporte voluntario</p>
                 <div id="qr-wrap"></div>
-                <p class="info">Puedes dejar un <span style="color:var(--btc)">aporte voluntario</span> para apoyar el código abierto.</p>
-                <p style="font-family: monospace; font-size: 11px; color: #555;">kakhan@coinos.io</p>
+                <div class="address-tag">kakhan@coinos.io</div>
             </div>
-            
-            <button class="btn btn-alt" style="margin-top: 20px;" onclick="location.reload()">Hacer otra foto</button>
+
+            <button class="btn btn-alt" style="margin-top: 25px;" onclick="location.reload()">VOLVER A EMPEZAR</button>
         </div>
     </div>
 
 <script>
-    const LN_ADDR = 'kakhan@coinos.io'; 
+    const LN_ADDR = 'kakhan@coinos.io';
     const cvs = document.getElementById('cvs');
     const ctx = cvs.getContext('2d');
     let imgBase = null, lasers = [];
 
-    // 1. Cargar Imagen
     document.getElementById('up').onchange = e => {
-        const reader = new FileReader();
-        reader.onload = ev => {
+        const r = new FileReader();
+        r.onload = ev => {
             imgBase = new Image();
             imgBase.onload = () => {
-                // Ajuste de resolución para que no pese demasiado
-                const scale = Math.min(1, 1200 / imgBase.width);
-                cvs.width = imgBase.width * scale;
-                cvs.height = imgBase.height * scale;
+                // Escalar imagen para que no rompa el diseño
+                const maxW = 1200;
+                const ratio = imgBase.width / imgBase.height;
+                cvs.width = Math.min(imgBase.width, maxW);
+                cvs.height = cvs.width / ratio;
+                
                 dibujar();
                 document.getElementById('step-1').style.display = 'none';
                 document.getElementById('step-2').style.display = 'block';
             };
             imgBase.src = ev.target.result;
         };
-        reader.readAsDataURL(e.target.files[0]);
+        r.readAsDataURL(e.target.files[0]);
     };
 
-    // 2. Click para poner láser
     cvs.onclick = e => {
         const rect = cvs.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (cvs.width / rect.width);
-        const y = (e.clientY - rect.top) * (cvs.height / rect.height);
-        
         lasers.push({
-            x: x,
-            y: y,
-            size: parseInt(document.getElementById('laser-size').value),
-            style: document.getElementById('laser-style').value
+            x: (e.clientX - rect.left) * (cvs.width / rect.width),
+            y: (e.clientY - rect.top) * (cvs.height / rect.height)
         });
         dibujar();
     };
-
-    function resetLasers() { lasers = []; dibujar(); }
 
     function dibujar() {
         ctx.drawImage(imgBase, 0, 0, cvs.width, cvs.height);
         lasers.forEach(l => {
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
-            
-            let g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.size * 2.5);
-            
-            if (l.style === 'classic') {
-                g.addColorStop(0, '#fff');
-                g.addColorStop(0.2, '#f2a900');
-                g.addColorStop(0.6, '#ff0000');
-                g.addColorStop(1, 'transparent');
-            } else if (l.style === 'glow') {
-                g.addColorStop(0, '#fff');
-                g.addColorStop(0.1, '#f2a900');
-                g.addColorStop(1, 'transparent');
-            } else { // Pulse/Explosión
-                g.addColorStop(0, '#fff');
-                g.addColorStop(0.1, '#fff');
-                g.addColorStop(0.4, '#f2a900');
-                g.addColorStop(1, 'transparent');
-                // Añadir destellos extra
-                ctx.shadowBlur = 30;
-                ctx.shadowColor = '#f2a900';
-            }
-            
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.arc(l.x, l.y, l.size * 2.5, 0, Math.PI*2);
+            // Efecto de resplandor naranja pro
+            let g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, cvs.width * 0.06);
+            g.addColorStop(0, '#fff'); 
+            g.addColorStop(0.2, '#f2a900'); 
+            g.addColorStop(0.5, '#ff4d00');
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g; 
+            ctx.beginPath(); 
+            ctx.arc(l.x, l.y, cvs.width * 0.06, 0, Math.PI*2); 
             ctx.fill();
             ctx.restore();
         });
     }
 
-    // 3. Finalizar y QR
+    function reset() { lasers = []; dibujar(); }
+
     function irAFinalizar() {
         document.getElementById('step-2').style.display = 'none';
         document.getElementById('step-3').style.display = 'block';
-        document.getElementById('top-info').innerText = "¡Imagen lista para descargar!";
-
-        new QRCode(document.getElementById('qr-wrap'), {
-            text: `lightning:${LN_ADDR}`,
-            width: 180,
-            height: 180
+        new QRCode(document.getElementById('qr-wrap'), { 
+            text: `lightning:${LN_ADDR}`, 
+            width: 180, 
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
         });
     }
 
